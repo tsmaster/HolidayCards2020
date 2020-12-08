@@ -1,8 +1,8 @@
 import drawSvg as draw
 
 
-def drawPolyline(dwg, vecList, strokeColor = 'black'):
-    p = draw.Path(stroke = strokeColor, fill='none')
+def drawPolyline(dwg, vecList, strokeColor = 'black', strokeWidth = 2):
+    p = draw.Path(stroke = strokeColor, fill='none', stroke_width = strokeWidth)
     if type(vecList[0]) == type((0, 1)):
         p.M(vecList[0][0], vecList[0][1])
     else:
