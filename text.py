@@ -467,6 +467,7 @@ font3x5 = [
 fontDict3x5 = {}
 for g in font3x5:
     fontDict3x5[g.character] = g
+fontDict3x5['height'] = 7
 
 def drawString(dwg, s, glyphUnit, sx, sy):
     x = sx
@@ -487,6 +488,14 @@ def drawString(dwg, s, glyphUnit, sx, sy):
             drawutil.drawPolyline(dwg, pts)
 
         x += glyphUnit * g.advance
+
+def getStringBounds(s, glyphUnit):
+    h = fontDict3x5.get('height') * glyphUnit
+    w = 0
+    for c in s:
+        glyph = fontDict3x5[c]
+        w += glyph.advance * glyphUnit
+    return (w,h)
         
 
 def drawHappyHolidays():

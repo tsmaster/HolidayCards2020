@@ -3,6 +3,10 @@ import random
 import bdgmath as m
 import drawutil
 import drawSvg as draw
+import text
+import clipvols
+
+
 
 class HeightField:
     def clipPolyLines(self, polyLines):
@@ -15,18 +19,18 @@ class HeightField:
         # for each segment, generate a list of intersections, which yields a set of disconnected segments.
         # check to connect the last clipped segment to its neighbor into an output polyline.
         
-        print("in clipPolyLine")
+        #print("in clipPolyLine")
         polyLines = []
         currentLine = []
         lastVert = polyLine[0]
         lastAccepted = self.clipPoint(lastVert)
 
-        print("first lastAccepted:", lastAccepted)
+        #print("first lastAccepted:", lastAccepted)
         
         if lastAccepted:
             currentLine.append(lastVert)
             
-        print("starting currentLine:", currentLine)
+        #print("starting currentLine:", currentLine)
 
         for vi in range(0, len(polyLine)-1):
             vi1 = vi + 1
@@ -89,15 +93,14 @@ class HeightField:
         if currentLine:
             polyLines.append(currentLine)
 
-        print("returning from clipPolyLines", polyLines)
+        #print("returning from clipPolyLines", polyLines)
         return polyLines
 
     def clipPoint(self, v):
         # return True if the point is UNCLIPPED by the heightfield
         h = self.getHeight(v.x())
         #print("h:", h)
-        return h <= v.y()
-
+        return v.y() >= h
 
     def clipSegment(self, v1, v2):
         # return list of polylines (segments?) that are accepted
@@ -115,7 +118,7 @@ class HeightField:
 
         v1in = self.clipPoint(v1)
 
-        print ("v1in?", v1in)
+        #print ("v1in?", v1in)
 
         lines = []
         currentLine = []
@@ -125,24 +128,14 @@ class HeightField:
         #print ("starting currentLine:", currentLine)
         
         for hvIndex in range(0, len(self.vertices) - 1):
-            #print("hvi:", hvIndex)
-            #print("currentLine:", currentLine)
             hvIndex1 = hvIndex + 1
             hvVert = self.vertices[hvIndex]
             hvVert1 = self.vertices[hvIndex1]
 
             intersect, colinear, u = m.intersectSegments(v1, v2, hvVert, hvVert1)
 
-            """
-            if (intersect is None):
-                print ("no intersect")
-            else:
-                print (intersect, colinear, u)
-                print ("hf segment:", hvVert, hvVert1)
-                print ("in segment:", v1, v2)
-            """
-
             if not (intersect is None):
+                #print("found intersect", intersect)
                 if currentLine:
                     currentLine.append(intersect)
                     lines.append(currentLine)
@@ -153,7 +146,7 @@ class HeightField:
         # ok, now we just need to deal with the end
         v2in = self.clipPoint(v2)
 
-        print ("v2in?", v2in)
+        #print ("v2in?", v2in)
 
         # but we have to tidy it up, just like other segments
         if v2in:
@@ -166,11 +159,33 @@ class HeightField:
         #print ("returning", v1in, v2in, lines)
         return v1in, v2in, lines
         
+    def getHeight(self, x):
+        if x < self.minX:
+            v0 = self.vertices[0]
+            return v0.y()
+        if x > self.maxX:
+            v1 = self.vertices[-1]
+            return v1.y()
+        for i in range(0, len(self.vertices) -1):
+            vi = self.vertices[i]
+            vi1 = self.vertices[i+1]
+            if vi.x() <= x and x <= vi1.x():
+                vix = vi.x()
+                vi1x = vi1.x()
+                spanWidth = vi1x - vix
+                distIntoSpan = x - vix
+                
+                f = distIntoSpan / spanWidth
+                viy = vi.y()
+                vi1y = vi1.y()
+                dy = vi1y - viy
+                return dy * f + viy
+
     
 
 
 class SinNoiseGenerator (HeightField):
-    def __init__(self, minX, maxX, xSampleDist, yCenter, amplWaveLenPairList):
+    def __init__(self, name, minX, maxX, xSampleDist, yCenter, amplWaveLenPairList):
         self.minX = minX
         self.maxX = maxX
         self.xSampleDist = xSampleDist
@@ -178,6 +193,13 @@ class SinNoiseGenerator (HeightField):
         self.amplWaveLenPairList = amplWaveLenPairList
         self.offsets = []
         self.vertices = []
+        self.name = name
+
+    def __repr__(self):
+        return self.name
+        
+    def __str__(self):
+        return self.name        
 
     def generate(self):
         for i in range(len(self.amplWaveLenPairList)):
@@ -185,15 +207,15 @@ class SinNoiseGenerator (HeightField):
 
         x = self.minX
         while x < self.maxX:
-            y = self.getHeight(x)
+            y = self.getContinuousHeight(x)
             v = m.Vector2(x,y)
             self.vertices.append(v)
             x += self.xSampleDist
-        y = self.getHeight(self.maxX)
+        y = self.getContinuousHeight(self.maxX)
         v = m.Vector2(self.maxX, y)
         self.vertices.append(v)
 
-    def getHeight(self, x):
+    def getContinuousHeight(self, x):
         h = self.yCenter
         for wi in range(len(self.amplWaveLenPairList)):
             amp, wl = self.amplWaveLenPairList[wi]
@@ -205,17 +227,26 @@ class SinNoiseGenerator (HeightField):
     def getSegments(self):
         pass
 
+    
+
 
 class CircularCloudGenerator:
     pass
 
 class MountainRange (HeightField):
-    def __init__(self, minX, minY, maxX, maxY):
+    def __init__(self, name, minX, minY, maxX, maxY):
         self.minX = minX
         self.minY = minY
         self.maxX = maxX
         self.maxY = maxY
         self.vertices = []
+        self.name = name
+
+    def __repr__(self):
+        return name
+
+    def __str__(self):
+        return name
 
     def generate(self):
         h = random.uniform(self.minY, self.maxY)
@@ -246,28 +277,6 @@ class MountainRange (HeightField):
                 h = newHeight
                 goingUp = not goingUp
 
-    def getHeight(self, x):
-        if x < self.minX:
-            v0 = self.vertices[0]
-            return v0.y()
-        if x > self.maxX:
-            v1 = self.vertices[-1]
-            return v1.y()
-        for i in range(0, len(self.vertices) -1):
-            vi = self.vertices[i]
-            vi1 = self.vertices[i+1]
-            if vi.x() <= x and x <= vi1.x():
-                vix = vi.x()
-                vi1x = vi1.x()
-                spanWidth = vi1x - vix
-                distIntoSpan = x - vix
-                
-                f = distIntoSpan / spanWidth
-                viy = vi.y()
-                vi1y = vi1.y()
-                dy = vi1y - viy
-                return dy * f + viy
-
     def getSegments(self):
         pass
 
@@ -290,7 +299,7 @@ def drawHeightField(dwg, hf, strokeColor, clips):
 
     for c in clips:
         polyLines = c.clipPolyLines(polyLines)
-        print("after clipping", c, polyLines)
+        #print("after clipping", c, polyLines)
 
     for p in polyLines:
         drawutil.drawPolyline(dwg, p, strokeColor = strokeColor)
@@ -599,8 +608,81 @@ def testMountainRange():
     dwg.saveSvg("mountains.svg")
     dwg.savePng("mountains.png")
 
+
+def testMountainRangeAndText():
+    random.seed("TEST MOUNTAIN RANGE AND TEXT")
+    
+    dwg = draw.Drawing(1500, 1000)
+    dwg.setRenderSize('150mm', '100mm')
+
+    cx = 750
+    cy = 500
+
+    clips = []
+
+    #clips.append(clipvols.InsideRect(0, 1000, 1500, 0))
+
+    title = "DEPECHE MODE"
+    titleHeight = 575
+    
+    fontUnit = 8
+    tbx, tby = text.getStringBounds(title, fontUnit)
+    left = cx - tbx/2
+    right = left + tbx
+    bottom = titleHeight
+    top = bottom + tby
+    
+    text.drawString(dwg, title, fontUnit, cx - tbx/2, bottom)
+
+    #clips.append(clipvols.OutsideRect(left - fontUnit, top + fontUnit,
+    #                                  right + fontUnit, bottom - fontUnit))
+    
+
+    sn1 = SinNoiseGenerator("sn1", 0, 1500, 20, 350, [(40, 400),
+                                                      (10, 117)])
+    sn1.generate()
+
+    drawHeightField(dwg, sn1, 'red', clips)
+
+    clips.append(sn1)
+
+    
+    sn2 = SinNoiseGenerator("sn2", 0, 1500, 20, 375, [(35, 300),
+                                                      (10, 93)])
+    sn2.generate()
+
+    drawHeightField(dwg, sn2, 'orange', clips)
+
+    clips.append(sn2)
+    
+    sn3 = SinNoiseGenerator("sn3 yellow", 0, 1500, 20, 400, [(30, 200),
+                                                             (10, 37)])
+    sn3.generate()
+
+    drawHeightField(dwg, sn3, 'yellow', clips)
+
+    clips.append(sn3)
+
+    mr1 = MountainRange("mr1 green", 0, 400, 1500, 600)
+    mr1.generate()
+    drawHeightField(dwg, mr1, 'green', clips)
+    clips.append(mr1)
+
+    mr2 = MountainRange("mr2 blue", 0, 450, 1500, 650)
+    mr2.generate()
+    drawHeightField(dwg, mr2, 'blue', clips)
+    clips.append(mr2)
+
+    mr3 = MountainRange("mr3 purp", 0, 500, 1500, 700)
+    mr3.generate()
+    drawHeightField(dwg, mr3, 'purple', clips)
+
+    dwg.saveSvg("text_mountains.svg")
+    dwg.savePng("text_mountains.png")
+    
+
 if __name__ == "__main__":
-    testMountainRange()
+    #testMountainRange()
     #mrtest_01()
     #mrtest_02()
     #mrtest_03()
@@ -612,3 +694,4 @@ if __name__ == "__main__":
     #mrtest_stress()
 
     #sn_test_01()
+    testMountainRangeAndText()
