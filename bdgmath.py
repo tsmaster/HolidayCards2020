@@ -181,11 +181,11 @@ def intersectSegments(s1v1, s1v2,
         # case 1
         if qMinusP.cross2dVector2(r) == 0:
             # two lines are colinear
-            return s1v1, True, 0
+            return s1v1, True, 0, 0
         # case 2
         else:
             # parallel and non-intersecting
-            return None, False, 0
+            return None, False, 0, 0
     else:
         rScaled = r.mulScalar(1.0 / rCrossS)
         u = qMinusP.cross2dVector2(rScaled)
@@ -195,7 +195,7 @@ def intersectSegments(s1v1, s1v2,
 
         if ((0.0 <= u) and (u < 1.0) and
             (0.0 <= t) and (t < 1.0)):
-            return q.addVec2(s.mulScalar(u)), False, u
+            return q.addVec2(s.mulScalar(u)), False, t, u
         else:
-            return None, False, u
+            return None, False, t, u
         

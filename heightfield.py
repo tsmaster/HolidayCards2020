@@ -132,7 +132,7 @@ class HeightField:
             hvVert = self.vertices[hvIndex]
             hvVert1 = self.vertices[hvIndex1]
 
-            intersect, colinear, u = m.intersectSegments(v1, v2, hvVert, hvVert1)
+            intersect, colinear, t, u = m.intersectSegments(v1, v2, hvVert, hvVert1)
 
             if not (intersect is None):
                 #print("found intersect", intersect)
@@ -634,8 +634,26 @@ def testMountainRangeAndText():
     
     text.drawString(dwg, title, fontUnit, cx - tbx/2, bottom)
 
-    #clips.append(clipvols.OutsideRect(left - fontUnit, top + fontUnit,
-    #                                  right + fontUnit, bottom - fontUnit))
+    clips.append(clipvols.OutsideRect(left - fontUnit, top + fontUnit,
+                                      right + fontUnit, bottom - fontUnit))
+
+
+    title = "BOYS DON'T CRY"
+    titleHeight = 350
+    
+    fontUnit = 6
+    tbx, tby = text.getStringBounds(title, fontUnit)
+    left = cx - tbx/2
+    right = left + tbx
+    bottom = titleHeight
+    top = bottom + tby
+    
+    text.drawString(dwg, title, fontUnit, cx - tbx/2, bottom)
+
+    clips.append(clipvols.OutsideRect(left - fontUnit, top + fontUnit,
+                                      right + fontUnit, bottom - fontUnit))
+
+    
     
 
     sn1 = SinNoiseGenerator("sn1", 0, 1500, 20, 350, [(40, 400),
