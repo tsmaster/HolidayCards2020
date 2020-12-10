@@ -187,6 +187,6 @@ for p in points:
 
 
 #dwg.save()
-dwg.saveSvg("test.svg")
-dwg.savePng("test.png")
+dwg.saveSvg("card.svg")
+dwg.savePng("card.png")
 

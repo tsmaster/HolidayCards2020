@@ -19,3 +19,11 @@ def drawPolyline(dwg, vecList, strokeColor = 'black', strokeWidth = 2):
             
     dwg.append(p)
 
+
+def transformPolyLine(vecList, mat):
+    return [mat.mulVec2(v) for v in vecList]
+
+def transformPolyLines(polyLineList, mat):
+    return [transformPolyLine(p) for p in polyLineList]
+
+    
