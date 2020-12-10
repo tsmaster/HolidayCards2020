@@ -1,6 +1,9 @@
 # emacs backups
 *~
 
+# output
+Output/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

@@ -60,6 +60,12 @@ def makeScaleNonUniform(sx, sy):
     return Matrix3(sx, 0, 0,
                    0, sy, 0)
 
+def makeTranslationRotationScaleUniform(x, y, r, s):
+    translate = makeTranslationMat3(x,y)
+    rot = makeRotationMat3Radians(r)
+    scale = makeScaleUniform(s)
+    return translate.mulMat3(rot.mulMat3(scale))
+
     
 class Vector2:
     def __init__(self, x=0.0, y=0.0):

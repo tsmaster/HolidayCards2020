@@ -1,192 +1,103 @@
-#import svgwrite
-#from svgwrite import mm
 import bdgmath as m
 import math
 import snowflake
 import random
 import drawSvg as draw
+import drawutil
+
+import text
+import snowflake
+
+"""
+The steps, using painter's algorithm, from front to back:
+
+1) HAPPY HOLIDAYS 2020
+
+2) Snowflakes
+
+3) Trees
+
+4) hills/mountains (heightfield)
+
+5) moon
+
+6) stars
+"""
 
 
-def drawSquareGrid(dwg, widthInMillimeters):
-    hLineGroup = dwg.add(dwg.g(id='hlines', stroke='green'))
-    y = 0
-    while y < 100:
-        hLineGroup.add(dwg.add(dwg.line(
-            start = (0*mm, y*mm),
-            end = (150*mm, y*mm))))
-        y += widthInMillimeters
-
-    vLineGroup = dwg.add(dwg.g(id='vlines', stroke='blue'))
-    x = 0
-    while x < 150:
-        vLineGroup.add(dwg.add(dwg.line(
-            start = (x*mm, 0*mm),
-            end = (x*mm, 100*mm))))
-        x += widthInMillimeters
-
-def drawCenteredSquare(dwg, widthInMillimeters):
-    sqgrp = dwg.add(dwg.g(id='sqgrp', stroke='red'))
-
-    hw = widthInMillimeters / 2
-    sqgrp.add(dwg.add(dwg.line(
-        start = (-hw * mm, -hw * mm),
-        end = (hw * mm, -hw * mm))))
-    sqgrp.add(dwg.add(dwg.line(
-        start = (-hw * mm, hw * mm),
-        end = (hw * mm, hw * mm))))
-    sqgrp.add(dwg.add(dwg.line(
-        start = (-hw * mm, -hw * mm),
-        end = (-hw * mm, hw * mm))))
-    sqgrp.add(dwg.add(dwg.line(
-        start = (hw * mm, -hw * mm),
-        end = (hw * mm, hw * mm))))
-
-def drawSegment(dwg, seg, strokeColor = 'black'):
-    e0 = seg.endpoints[0]
-    e1 = seg.endpoints[1]
-    e0x = e0.x()
-    e0y = e0.y()
-    e1x = e1.x()
-    e1y = e1.y()
-
-    print ("drawing segment from (%f %f) to (%f %f)" % (e0x, e0y, e1x, e1y))
+def drawCenteredString(dwg, s, glyphUnit, x, y):
+    tbx, tby = text.getStringBounds(s, glyphUnit)
+    left = x - tbx / 2
+    right = left + tbx
+    bottom = y - tby / 2
+    top = bottom + tby
     
-    #dwg.add(dwg.line(
-    #    start = (e0x * mm, e0y * mm),
-    #    end = (e1x * mm, e1y * mm),
-    #    stroke = strokeColor
-    #))
-    dwg.append(draw.Lines(e0x, e0y,
-                          e1x, e1y,
-                          close = False,
-                          stroke = strokeColor))
+    text.drawString(dwg, s, glyphUnit, left, bottom)
 
 
-def drawPolyline(dwg, vecList, strokeColor = 'black'):
-    p = draw.Path(stroke = strokeColor, fill='none')
-    p.M(vecList[0][0], vecList[0][1])
-    for v in vecList[1:]:
-        p.L(v[0], v[1])
-    dwg.append(p)
-
+def drawTextLayer(dwg, cardWidth, cardHeight):
+    halfCardWidth = cardWidth / 2
+    halfCardHeight = cardHeight / 2
     
-def testCenteredTri(dwg, w, mat):
-    v0 = m.Vector2(w, 0)
-    v1 = m.Vector2(w * math.cos(2*math.pi / 3.0), w * math.sin(2*math.pi / 3.0))
-    v2 = m.Vector2(w * math.cos(2*math.pi / 3.0), -w * math.sin(2*math.pi / 3.0))
+    drawCenteredString(dwg, 'HAPPY HOLIDAYS', 10, halfCardWidth, halfCardHeight)
+    drawCenteredString(dwg, '2020', 12, halfCardWidth, halfCardHeight - 70)
 
-    tv0 = mat.mulVec2(v0)
-    tv1 = mat.mulVec2(v1)
-    tv2 = mat.mulVec2(v2)
+def drawFlakeLayer(dwg, cardWidth, cardHeight):
+    flakeMargin = 100
+    flakePoints = drawutil.pickPointsInBox(flakeMargin, flakeMargin,
+                                           cardWidth - flakeMargin, cardHeight - flakeMargin,
+                                           12, 80)
 
-    s0 = m.LineSegment(tv0, tv1)
-    s1 = m.LineSegment(tv1, tv2)
-    s2 = m.LineSegment(tv2, tv0)
+    for fp in flakePoints:
+        fpv = m.Vector2(*fp)
+        sfg = snowflake.SnowflakeGenerator(random.randrange(9, 16))
+        sfg.generate()
+        spaths = sfg.generatePaths()
 
-    drawSegment(dwg, s0)
-    drawSegment(dwg, s1)
-    drawSegment(dwg, s2)
+        #print("paths:",spaths)
 
-#dwg = svgwrite.Drawing('test.svg', size=(u'150mm', u'100mm'), profile='tiny')
-dwg = draw.Drawing(1500, 1000)
-dwg.setRenderSize('150mm', '100mm')
+        angle = random.uniform(0, 2*math.pi)
 
-#link = dwg.add(dwg.a("http://link.to/internet"))
-#square = dwg.add(dwg.rect((0, 0), (1, 1)))
+        flakeScale = random.uniform(2,6)
 
-#dwg.add(dwg.line((0, 0), (10, 0), stroke=svgwrite.rgb(10, 10, 16, '%')))
-#dwg.add(dwg.text('Test', insert=(75, 100)))
-
-print("drawing grid of width", 10)
-
-#drawSquareGrid(dwg, 10)
-
-#drawCenteredSquare(dwg, 25)
-#testCenteredTri(dwg, 20, m.Matrix3())
-
-xlate = m.makeTranslationMat3(60, 60)
-print("trans mat", xlate)
-#testCenteredTri(dwg, 20, xlate)
-
-rot = m.makeRotationMat3Radians(math.radians(10))
-xlateAndRot = xlate.mulMat3(rot)
-#testCenteredTri(dwg, 20, xlateAndRot)
-
-def drawFlake(dwg, sf, mat):
-    paths = sf.generatePaths()
+        mat = m.makeTranslationRotationScaleUniform(fpv.x(), fpv.y(), angle, flakeScale)
+        tpl = drawutil.transformPolyLines(spaths, mat)
+        drawutil.drawPolylines(dwg, tpl)
     
-    for i in range(6):
-        moreRotMat = m.makeRotationMat3Radians(math.radians(60) * i)
-
-        rm = mat.mulMat3(moreRotMat)
-
-        vecX = m.Vector2(1, 0)
-        vecY = m.Vector2(0.5, math.cos(math.radians(60)))
-        fVecY = m.Vector2(0.5, -math.cos(math.radians(60)))
-        
-        for path in paths:
-            verts = []
-            fverts = []
-            for pt in path:
-                xi, yi = pt
-                p = vecX.mulScalar(xi).addVec2(vecY.mulScalar(yi))
-                pTrans = rm.mulVec2(p)
-                verts.append((pTrans.x(), pTrans.y()))
-
-                p = vecX.mulScalar(xi).addVec2(fVecY.mulScalar(yi))
-                pTrans = rm.mulVec2(p)
-                fverts.append((pTrans.x(), pTrans.y()))
-
-            drawPolyline(dwg, verts)
-            drawPolyline(dwg, fverts)
-
-
-def pickPointsInBox(x0, y0, x1, y1, n, r):
-    points = []
-
-    rSqr = r*r
-
-    for i in range(n * 3):
-        rx = random.randrange(x0, x1)
-        ry = random.randrange(y0, y1)
-
-        tooClose = False
-        for p in points:
-            px, py = p
-            dx = px - rx
-            dy = py - ry
-            distSqr = dx * dx + dy * dy
-            if distSqr < rSqr:
-                tooClose = True
-                break
-        if tooClose:
-            continue
-        points.append((rx, ry))
-        if len(points) == n:
-            break
-    return points
-
-points = pickPointsInBox(200, 200, 1300, 800, 10, 200)
-
-for p in points:
-    rx, ry = p
-    ra = random.randrange(0, 60)
+def drawTreeLayer(dwg):
+    pass
     
-    xlate = m.makeTranslationMat3(rx, ry)
-
-    rot = m.makeRotationMat3Radians(math.radians(ra))
-    xlateAndRot = xlate.mulMat3(rot)
-
-    scale = m.makeScaleUniform(10.0)
-    xrs = xlateAndRot.mulMat3(scale)
+def drawMountainLayer(dwg):
+    pass
     
-    sf = snowflake.SnowflakeGenerator(random.randrange(10, 15))
-    sf.generate()
+def drawMoonLayer(dwg):
+    pass
+    
+def drawStarLayer(dwg):
+    pass
+    
 
-    drawFlake(dwg, sf, xrs)
+def makeCard(seed = None):
+    if not (seed is None):
+        random.seed(seed)
+
+    cardWidth = 1500
+    cardHeight = 1000
+
+    dwg = draw.Drawing(cardWidth, cardHeight)
+    dwg.setRenderSize('150mm', '100mm')
+
+    drawTextLayer(dwg, cardWidth, cardHeight)
+    drawFlakeLayer(dwg, cardWidth, cardHeight)
+    drawTreeLayer(dwg)
+    drawMountainLayer(dwg)
+    drawMoonLayer(dwg)
+    drawStarLayer(dwg)
+    
+
+    dwg.saveSvg("card.svg")
+    dwg.savePng("card.png")
 
 
-#dwg.save()
-dwg.saveSvg("card.svg")
-dwg.savePng("card.png")
-
+if __name__ == "__main__":
+    makeCard()

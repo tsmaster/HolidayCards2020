@@ -1,5 +1,8 @@
 import math
 import random
+import bdgmath as m
+import drawutil
+
 # TODO be smarter about seeding?
 
 class SnowflakeGenerator:
@@ -75,7 +78,7 @@ class SnowflakeGenerator:
         return False, None
         
 
-    def generatePaths(self):
+    def mergeUnitPaths(self):
         paths = []
         
         for s in self.segments:
@@ -91,10 +94,28 @@ class SnowflakeGenerator:
             if not foundPath:
                 paths.append([(x0, y0), (x1, y1)])                
         return paths
-            
-                
 
 
+    def generatePaths(self):
+        paths = []
+        vecX = m.Vector2(1,0)
+        vecY = m.Vector2(0.5, math.cos(math.radians(60)))
+
+        for path in self.mergeUnitPaths():
+            verts = []
+            flippedVerts = []
+            for pt in path:
+                xi, yi = pt
+                v = vecX.mulScalar(xi).addVec2(vecY.mulScalar(yi))
+                verts.append(v)
+            paths.append(verts)
+        oneArm = paths + drawutil.transformPolyLines(paths, m.makeScaleNonUniform(1, -1))
+
+        allArms = []
+        for i in range(6):
+            rotMat = m.makeRotationMat3Radians(math.radians(60 * i))
+            allArms += drawutil.transformPolyLines(oneArm, rotMat)
+        return allArms
 
 if __name__ == "__main__":
     sg = SnowflakeGenerator(10)
