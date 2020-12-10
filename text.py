@@ -489,6 +489,17 @@ def drawString(dwg, s, glyphUnit, sx, sy):
 
         x += glyphUnit * g.advance
 
+def drawCenteredString(dwg, s, glyphUnit, x, y):
+    tbx, tby = getStringBounds(s, glyphUnit)
+    left = x - tbx / 2
+    right = left + tbx
+    bottom = y - tby / 2
+    top = bottom + tby
+    
+    drawString(dwg, s, glyphUnit, left, bottom)
+
+        
+
 def getStringBounds(s, glyphUnit):
     h = fontDict3x5.get('height') * glyphUnit
     w = 0

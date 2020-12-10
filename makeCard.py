@@ -4,6 +4,7 @@ import snowflake
 import random
 import drawSvg as draw
 import drawutil
+import clipvols
 
 import text
 import snowflake
@@ -25,24 +26,47 @@ The steps, using painter's algorithm, from front to back:
 """
 
 
-def drawCenteredString(dwg, s, glyphUnit, x, y):
-    tbx, tby = text.getStringBounds(s, glyphUnit)
-    left = x - tbx / 2
-    right = left + tbx
-    bottom = y - tby / 2
-    top = bottom + tby
-    
-    text.drawString(dwg, s, glyphUnit, left, bottom)
 
-
-def drawTextLayer(dwg, cardWidth, cardHeight):
+def drawTextLayer(dwg, cardWidth, cardHeight, clips):
     halfCardWidth = cardWidth / 2
     halfCardHeight = cardHeight / 2
-    
-    drawCenteredString(dwg, 'HAPPY HOLIDAYS', 10, halfCardWidth, halfCardHeight)
-    drawCenteredString(dwg, '2020', 12, halfCardWidth, halfCardHeight - 70)
 
-def drawFlakeLayer(dwg, cardWidth, cardHeight):
+    title = 'HAPPY HOLIDAYS'
+    titleSize = 10
+    year = '2020'
+    yearSize = 12
+
+    tbx, tby = text.getStringBounds(title, titleSize)
+    ybx, yby = text.getStringBounds(year, yearSize)
+    yspc = 10
+
+    htbx = tbx / 2
+    totY = tby + yspc + yby
+    hTotY = totY / 2
+
+    cx = random.uniform(htbx, cardWidth - htbx)
+    cy = random.uniform(hTotY, cardHeight - hTotY)
+
+    titleTop = cy + hTotY
+    titleBottom = titleTop - tby
+    titleLeft = cx - htbx
+    titleRight = titleLeft + tbx
+
+    yearTop = titleBottom - yspc
+    yearBottom = yearTop - yby
+    yearLeft = cx - ybx / 2
+    yearRight = yearLeft + ybx
+    
+    text.drawString(dwg, title, titleSize, titleLeft, titleBottom)
+    text.drawString(dwg, year, yearSize, yearLeft, yearBottom)
+
+    clipMargin = 20
+    clips.append(clipvols.OutsideRect(titleLeft - clipMargin,
+                                      titleTop + clipMargin,
+                                      titleRight - clipMargin,
+                                      yearBottom - clipMargin))
+
+def drawFlakeLayer(dwg, cardWidth, cardHeight, clips):
     flakeMargin = 100
     flakePoints = drawutil.pickPointsInBox(flakeMargin, flakeMargin,
                                            cardWidth - flakeMargin, cardHeight - flakeMargin,
@@ -62,18 +86,23 @@ def drawFlakeLayer(dwg, cardWidth, cardHeight):
 
         mat = m.makeTranslationRotationScaleUniform(fpv.x(), fpv.y(), angle, flakeScale)
         tpl = drawutil.transformPolyLines(spaths, mat)
-        drawutil.drawPolylines(dwg, tpl)
+
+        clippedPolylines = tpl
+        for c in clips:
+            clippedPolylines = c.clipPolyLines(clippedPolylines)
+            
+        drawutil.drawPolylines(dwg, clippedPolylines)
     
-def drawTreeLayer(dwg):
+def drawTreeLayer(dwg, clips):
     pass
     
-def drawMountainLayer(dwg):
+def drawMountainLayer(dwg, clips):
     pass
     
-def drawMoonLayer(dwg):
+def drawMoonLayer(dwg, clips):
     pass
     
-def drawStarLayer(dwg):
+def drawStarLayer(dwg, clips):
     pass
     
 
@@ -87,17 +116,18 @@ def makeCard(seed = None):
     dwg = draw.Drawing(cardWidth, cardHeight)
     dwg.setRenderSize('150mm', '100mm')
 
-    drawTextLayer(dwg, cardWidth, cardHeight)
-    drawFlakeLayer(dwg, cardWidth, cardHeight)
-    drawTreeLayer(dwg)
-    drawMountainLayer(dwg)
-    drawMoonLayer(dwg)
-    drawStarLayer(dwg)
+    clips = []    
+    drawTextLayer(dwg, cardWidth, cardHeight, clips)
+    drawFlakeLayer(dwg, cardWidth, cardHeight, clips)
+    drawTreeLayer(dwg, clips)
+    drawMountainLayer(dwg, clips)
+    drawMoonLayer(dwg, clips)
+    drawStarLayer(dwg, clips)
     
 
-    dwg.saveSvg("card.svg")
-    dwg.savePng("card.png")
+    dwg.saveSvg("Output/card.svg")
+    dwg.savePng("Output/card.png")
 
 
 if __name__ == "__main__":
-    makeCard()
+    makeCard("UNIT TEST")
