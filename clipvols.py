@@ -1,3 +1,4 @@
+import math
 import bdgmath as m
 
 class ClipVolume:
@@ -228,6 +229,117 @@ class OutsideTri(ClipVolume):
 
         if eAcc:
             postamble = [v2]
+        else:
+            postamble = []
+            
+
+        points = preamble + [i[1] for i in intersections] + postamble
+
+        if ((len(points) % 2) != 0):
+            print("ERROR")
+            print(v1, v2)
+            for s in self.sides:
+                print (s)
+            print ("intersections found:", intersections)
+            print ("sAcc, eAcc", sAcc, eAcc)
+        assert((len(points) % 2) == 0)
+
+        segs = []
+        for ptIndex in range(0, len(points), 2):
+            pt0 = points[ptIndex]
+            pt1 = points[ptIndex+1]
+            segs.append([pt0, pt1])
+        return sAcc, eAcc, segs
+        
+class OutsideCircle(ClipVolume):
+    def __init__(self, center, radius):
+        self.center = center
+        self.radius = radius
+
+    def clipPoint(self, v):
+        dist = self.center.subVec2(v).mag()
+        return dist >= self.radius
+
+    def clipSegment(self, v0, v1):
+        # return list of polylines that are accepted
+
+        sAcc = self.clipPoint(v0)
+        eAcc = self.clipPoint(v1)
+        if ((not sAcc) and (not eAcc)):
+            return False, False, []
+        
+        intersections = []
+
+        # from https://math.stackexchange.com/questions/103556/circle-and-line-segment-intersection
+        # p(t) = v0(1-t) + v1(t)
+        # dx(t) = cx - p(t)x
+        # dy(t) = cy - p(t)y
+        # dx(t) * dx(t) + dy(t) * dy(t) = r * r
+        # solve for t
+
+        # dx(t) = cx - [v0x(1-t) + v1x(t)]
+        # dy(t) = cy - [v0y(1-t) + v1y(t)]
+        # dx(t) = cx - v0x + (v0x- v1x)*t
+        # Ax = cx - v0x
+        # Bx = v0x - v1x
+        # dx^2(t) = Ax*Ax + 2*Ax*Bx * t + Bx*Bx * t^2
+
+        # 0 = Ax*Ax + Ay*Ay - r*r
+        #     + (2*Ax*Bx + 2*Ay*By) * t
+        #     + (Bx*Bx + By*By) * t^2
+
+        # Q = Ax*Ax + Ay*Ay - r*r
+        # R = 2 ( Ax*Bx + Ay*By)
+        # S = (Bx*Bx + By*By)
+
+        # t = (-R +/- sqrt(R^2 - 4SQ)) / 2*S
+
+        # if R^2 = 4SQ, that should be a single intersection, but it's simpler
+        # to reject it, and let the original line think that it's unclipped.
+
+        # if R^2 < 4SQ, no roots
+        # if R^2 > 4SQ, two roots
+        # but we will need to ensure that 0 < t < 1
+
+        Ax = self.center.x() - v0.x()
+        Bx = v0.x() - v1.x()
+        Ay = self.center.y() - v0.y()
+        By = v0.y() - v1.y()
+
+        Q = Ax*Ax + Ay*Ay - self.radius*self.radius
+        R = 2*(Ax*Bx + Ay*By)
+        S = (Bx*Bx + By*By)
+
+        if R*R <= 4*S*Q:
+            # no intersection
+            intersections = []
+
+        else:
+            disc = math.sqrt(R*R - 4*S*Q)
+            t0 = (-R-disc) / 2*S
+            t1 = (-R+disc) / 2*S
+
+            segmentVector = v1.subVec2(v0)
+            
+            if (0 < t0) and (t0 < 1):
+                intersections.append((t0, v0.addVec2(segmentVector.mulScalar(t0))))
+
+            if (0 < t1) and (t1 < 1):
+                intersections.append((t1, v0.addVec2(segmentVector.mulScalar(t1))))
+
+        if len(intersections) == 0:
+            # trivial accept
+            return sAcc, eAcc, [[v0, v1]]
+
+        intersections.sort()
+
+        if sAcc:
+            preamble = [v0]
+        else:
+            preamble = []
+
+        if eAcc:
+            postamble = [v1]
         else:
             postamble = []
             

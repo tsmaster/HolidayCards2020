@@ -10,6 +10,8 @@ import text
 import snowflake
 import sprucetree
 import heightfield
+import moon
+import stars
 
 """
 The steps, using painter's algorithm, from front to back:
@@ -63,10 +65,23 @@ def drawTextLayer(dwg, cardWidth, cardHeight, clips):
     text.drawString(dwg, year, yearSize, yearLeft, yearBottom)
 
     clipMargin = 20
-    clips.append(clipvols.OutsideRect(titleLeft - clipMargin,
-                                      titleTop + clipMargin,
-                                      titleRight - clipMargin,
-                                      yearBottom - clipMargin))
+
+    mLeft = titleLeft - clipMargin
+    mTop = titleTop + clipMargin
+    mRight = titleRight + clipMargin
+    mBottom = yearBottom - clipMargin
+    
+    clips.append(clipvols.OutsideRect(mLeft,
+                                      mTop,
+                                      mRight,
+                                      mBottom))
+
+    drawutil.drawPolyline(dwg, [m.Vector2(mLeft, mBottom),
+                                m.Vector2(mLeft, mTop),
+                                m.Vector2(mRight, mTop),
+                                m.Vector2(mRight, mBottom),
+                                m.Vector2(mLeft, mBottom)])
+    
 
 def drawFlakeLayer(dwg, cardWidth, cardHeight, clips):
     flakeMargin = 100
@@ -103,10 +118,6 @@ def drawTreeLayer(dwg, cardWidth, cardHeight, clips):
 
     xRanges = [[0, cardWidth / 3],
                [2 * cardWidth / 3, cardWidth]]
-
-    # TODO 
-    # add tree clip triangles to clips
-    # clip trees against text
     
     for areaIndex in range(len(counts)):
         count = counts[areaIndex]
@@ -120,7 +131,7 @@ def drawTreeLayer(dwg, cardWidth, cardHeight, clips):
             hPct = 100 / depths[treeIndex] 
             
             x = random.uniform(left, right)
-            y = random.uniform(bottom + (top - bottom) * (1 - hPct), top)
+            y = bottom + (top - bottom) * (1 - hPct)
 
     
             print ("treex, y", x,y)
@@ -142,7 +153,7 @@ def drawTreeLayer(dwg, cardWidth, cardHeight, clips):
             left = x - w/2
             top = y + h
             right = x + w/2
-            bottom = y
+            bottom = y + trunkHeight
             
             v0 = m.Vector2(left, bottom)
             v1 = m.Vector2(x, top)
@@ -187,11 +198,48 @@ def drawMountainLayer(dwg, cardWidth, cardHeight, clips):
     clips.append(mr3)
     
     
-def drawMoonLayer(dwg, clips):
-    pass
+def drawMoonLayer(dwg, cardWidth, cardHeight, clips):
+    moonOrbitRadius = cardHeight - 200
+    moonAngleMin = math.radians(60)
+    moonAngleMax = math.radians(120)
+    moonAngle = random.uniform(moonAngleMin, moonAngleMax)
+    moonPhase = random.uniform(0, 8)
+    moonPolyLines = [moon.genMoonPoints(moonPhase)]
+    moonX = cardWidth / 2 + math.cos(moonAngle) * moonOrbitRadius
+    moonY = math.sin(moonAngle) * moonOrbitRadius
+    moonRadius = 3.5 * 25
+    mat = m.makeTranslationRotationScaleUniform(moonX, moonY, 0, 3.5)
+    moonPolyLines = drawutil.transformPolyLines(moonPolyLines, mat)
+
+    moonPolyLines = clipvols.clipPolyLinesAgainstClipList(moonPolyLines, clips)
+
+    drawutil.drawPolylines(dwg, moonPolyLines)
+
+    clips.append(clipvols.OutsideCircle(m.Vector2(moonX, moonY), moonRadius))
     
-def drawStarLayer(dwg, clips):
-    pass
+def drawStarLayer(dwg, cardWidth, cardHeight, clips):
+    numStars = random.randrange(40, 50)
+
+    starLeft = 0
+    starRight = cardWidth
+    starBottom = cardHeight / 2
+    starTop = cardHeight
+
+    for n in range(numStars):
+        x = random.uniform(starLeft, starRight)
+        y = random.uniform(starBottom, starTop)
+
+        angle = random.uniform(0, 2*math.pi)
+
+        scale = 1
+
+        mat = m.makeTranslationRotationScaleUniform(x, y, angle, scale)
+
+        polylines = drawutil.transformPolyLines([stars.genStarPoints()], mat)
+
+        polylines = clipvols.clipPolyLinesAgainstClipList(polylines, clips)
+
+        drawutil.drawPolylines(dwg, polylines)
     
 
 def makeCard(seed = None):
@@ -209,8 +257,8 @@ def makeCard(seed = None):
     drawFlakeLayer(dwg, cardWidth, cardHeight, clips)
     drawTreeLayer(dwg, cardWidth, cardHeight, clips)
     drawMountainLayer(dwg, cardWidth, cardHeight, clips)
-    drawMoonLayer(dwg, clips)
-    drawStarLayer(dwg, clips)
+    drawMoonLayer(dwg, cardWidth, cardHeight, clips)
+    drawStarLayer(dwg, cardWidth, cardHeight, clips)
     
 
     dwg.saveSvg("Output/card.svg")
