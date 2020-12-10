@@ -138,7 +138,7 @@ class OutsideRect(ClipVolume):
             c1, c2 = s
             i, isGood, t, u = m.intersectSegments(v1, v2, c1, c2)
             if not (i is None):
-                print("found intersection", t, i)
+                #print("found intersection", t, i)
                 intersections.append((t, i))
 
         if len(intersections) == 0:
@@ -171,6 +171,94 @@ class OutsideRect(ClipVolume):
 
 
 class OutsideTri(ClipVolume):
-    def __init(self, v0, v1, v2):
-        pass
+    def __init__(self, v0, v1, v2):
+        self.verts = [v0, v1, v2]
+
+        self.sides = [(self.verts[0], self.verts[1]),
+                      (self.verts[1], self.verts[2]),
+                      (self.verts[2], self.verts[0])]
+
+    def clipPoint(self, v):
+        # check cross product to see if V is in front of any segment
+
+        for s in self.sides:
+            c0, c1 = s
+            #print("testing against", c0, c1)
+            sideVector = c1.subVec2(c0)
+            #print("side vector", sideVector)
+            q = v.subVec2(c0)
+            #print("q vector", q)
+
+            crossProduct = sideVector.cross2dVector2(q)
+            #print("crossProduct", crossProduct)
+
+            inFront = crossProduct > 0
+            #print("in front?", inFront)
+            if inFront:
+                return True
+        return False
+
+    def clipSegment(self, v1, v2):
+        # return list of polylines that are accepted
+
+        sAcc = self.clipPoint(v1)
+        eAcc = self.clipPoint(v2)
+        if ((not sAcc) and (not eAcc)):
+            return False, False, []
+        
+        intersections = []
+
+        for s in self.sides:
+            c1, c2 = s
+            i, isGood, t, u = m.intersectSegments(v1, v2, c1, c2)
+            if not (i is None):
+                #print("found intersection", t, i)
+                intersections.append((t, i))
+
+        if len(intersections) == 0:
+            # trivial accept
+            return sAcc, eAcc, [[v1, v2]]
+
+        intersections.sort()
+
+        if sAcc:
+            preamble = [v1]
+        else:
+            preamble = []
+
+        if eAcc:
+            postamble = [v2]
+        else:
+            postamble = []
+            
+
+        points = preamble + [i[1] for i in intersections] + postamble
+
+        if ((len(points) % 2) != 0):
+            print("ERROR")
+            print(v1, v2)
+            for s in self.sides:
+                print (s)
+            print ("intersections found:", intersections)
+            print ("sAcc, eAcc", sAcc, eAcc)
+        assert((len(points) % 2) == 0)
+
+        segs = []
+        for ptIndex in range(0, len(points), 2):
+            pt0 = points[ptIndex]
+            pt1 = points[ptIndex+1]
+            segs.append([pt0, pt1])
+        return sAcc, eAcc, segs
+        
     
+
+
+def clipPolyLinesAgainstClipList(polyLineList, clipVolumeList):
+    outPolyLines = polyLineList
+
+    for c in clipVolumeList:
+        outPolyLines = c.clipPolyLines(outPolyLines)
+        if not outPolyLines:
+            return []
+    return outPolyLines
+            

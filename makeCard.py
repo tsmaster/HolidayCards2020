@@ -8,6 +8,7 @@ import clipvols
 
 import text
 import snowflake
+import sprucetree
 
 """
 The steps, using painter's algorithm, from front to back:
@@ -93,8 +94,62 @@ def drawFlakeLayer(dwg, cardWidth, cardHeight, clips):
             
         drawutil.drawPolylines(dwg, clippedPolylines)
     
-def drawTreeLayer(dwg, clips):
-    pass
+def drawTreeLayer(dwg, cardWidth, cardHeight, clips):
+    leftCount = random.randrange(2,5)
+    rightCount = random.randrange(2,5)
+
+    counts = [leftCount, rightCount]
+
+    xRanges = [[0, cardWidth / 3],
+               [2 * cardWidth / 3, cardWidth]]
+
+    # TODO 
+    # add tree clip triangles to clips
+    # clip trees against text
+    
+    for areaIndex in range(len(counts)):
+        count = counts[areaIndex]
+        depths = m.genSampleList(100, 130, count)
+        
+        for treeIndex in range(count):
+            left, right = xRanges[areaIndex]
+            bottom = 0
+            top = cardHeight / 4
+
+            hPct = 100 / depths[treeIndex] 
+            
+            x = random.uniform(left, right)
+            y = random.uniform(bottom + (top - bottom) * (1 - hPct), top)
+
+    
+            print ("treex, y", x,y)
+    
+            h = 800 * hPct
+            w = 600 * hPct
+            trunkHeight = 60
+            trunkWidth = 50
+            numChunks = random.randrange(2,5)
+            mat = m.makeTranslationMat3(x,y)
+            paths = drawutil.transformPolyLines(
+                sprucetree.drawSpruce(h, w, trunkHeight, trunkWidth, numChunks),
+                mat)
+
+            paths = clipvols.clipPolyLinesAgainstClipList(paths, clips)
+    
+            drawutil.drawPolylines(dwg, paths, strokeColor = 'green')
+
+            left = x - w/2
+            top = y + h
+            right = x + w/2
+            bottom = y
+            
+            v0 = m.Vector2(left, bottom)
+            v1 = m.Vector2(x, top)
+            v2 = m.Vector2(right, bottom)
+            
+            treeClipVol = clipvols.OutsideTri(v0, v1, v2)
+            clips.append(treeClipVol)
+                                            
     
 def drawMountainLayer(dwg, clips):
     pass
@@ -119,7 +174,7 @@ def makeCard(seed = None):
     clips = []    
     drawTextLayer(dwg, cardWidth, cardHeight, clips)
     drawFlakeLayer(dwg, cardWidth, cardHeight, clips)
-    drawTreeLayer(dwg, clips)
+    drawTreeLayer(dwg, cardWidth, cardHeight, clips)
     drawMountainLayer(dwg, clips)
     drawMoonLayer(dwg, clips)
     drawStarLayer(dwg, clips)

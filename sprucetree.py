@@ -13,7 +13,7 @@ def drawSpruce(totalHeight, width, trunkHeight, trunkWidth, chunks = 3):
 
     trunkLeft = -trunkWidth / 2
     trunkRight = trunkWidth / 2
-    trunkLines = 6
+    trunkLines = max(6, int(trunkWidth / 10))
 
     trunkLinePosns = m.genSampleList(trunkLeft, trunkRight, trunkLines)
     
@@ -22,15 +22,17 @@ def drawSpruce(totalHeight, width, trunkHeight, trunkWidth, chunks = 3):
         top = m.Vector2(x, trunkHeight)
         # oops, this will be upside down.
 
-        seg = m.LineSegment(base, top)
+        seg = (base, top) #m.LineSegment(base, top)
         segments.append(seg)
 
     # draw chunks
+    needleMax = max(16, int(width / 20))
+    
     chunkBases = m.genSampleList(trunkHeight, totalHeight, chunks + 1)
     chunkWidths = m.genSampleList(0, width, chunks + 1)
     chunkWidths.reverse()
 
-    chunkLineCounts = m.genSampleList(8, 16, chunks + 1)
+    chunkLineCounts = m.genSampleList(needleMax / 2 , needleMax, chunks + 1)
     chunkLineCounts.reverse()
     chunkLineCounts = [int(x) for x in chunkLineCounts]
     
@@ -51,7 +53,8 @@ def drawSpruce(totalHeight, width, trunkHeight, trunkWidth, chunks = 3):
             topX = -chunkTopWidth / 2 + f * chunkTopWidth
             base = m.Vector2(baseX, thisChunkBase)
             top = m.Vector2(topX, thisChunkTop)
-            seg = m.LineSegment(base, top)
+            #seg = m.LineSegment(base, top)
+            seg = (base, top)
             segments.append(seg)
 
     return segments
