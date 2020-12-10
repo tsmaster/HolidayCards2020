@@ -9,6 +9,7 @@ import clipvols
 import text
 import snowflake
 import sprucetree
+import heightfield
 
 """
 The steps, using painter's algorithm, from front to back:
@@ -128,7 +129,7 @@ def drawTreeLayer(dwg, cardWidth, cardHeight, clips):
             w = 600 * hPct
             trunkHeight = 60
             trunkWidth = 50
-            numChunks = random.randrange(2,5)
+            numChunks = random.randrange(20,50)
             mat = m.makeTranslationMat3(x,y)
             paths = drawutil.transformPolyLines(
                 sprucetree.drawSpruce(h, w, trunkHeight, trunkWidth, numChunks),
@@ -151,8 +152,40 @@ def drawTreeLayer(dwg, cardWidth, cardHeight, clips):
             clips.append(treeClipVol)
                                             
     
-def drawMountainLayer(dwg, clips):
-    pass
+def drawMountainLayer(dwg, cardWidth, cardHeight, clips):
+    sn1 = heightfield.SinNoiseGenerator('r', 0, cardWidth, 20, 350, [(40, 400),
+                                                                     (10, 117)])
+    sn1.generate()
+    heightfield.drawHeightField(dwg, sn1, 'red', clips)
+    clips.append(sn1)
+
+    sn2 = heightfield.SinNoiseGenerator('o', 0, cardWidth, 20, 375, [(35, 300),
+                                                                     (10, 93)])
+    sn2.generate()
+    heightfield.drawHeightField(dwg, sn2, 'orange', clips)
+    clips.append(sn2)
+
+    sn3 = heightfield.SinNoiseGenerator('y', 0, cardWidth, 20, 400, [(30, 200),
+                                                                     (10, 37)])
+    sn3.generate()
+    heightfield.drawHeightField(dwg, sn3, 'yellow', clips)
+    clips.append(sn3)
+
+    mr1 = heightfield.MountainRange('g', 0, 400, cardWidth, 600)
+    mr1.generate()
+    heightfield.drawHeightField(dwg, mr1, 'green', clips)
+    clips.append(mr1)
+   
+    mr2 = heightfield.MountainRange('b', 0, 450, cardWidth, 650)
+    mr2.generate()
+    heightfield.drawHeightField(dwg, mr2, 'blue', clips)
+    clips.append(mr2)
+
+    mr3 = heightfield.MountainRange('p', 0, 500, cardWidth, 700)
+    mr3.generate()
+    heightfield.drawHeightField(dwg, mr3, 'purple', clips)
+    clips.append(mr3)
+    
     
 def drawMoonLayer(dwg, clips):
     pass
@@ -175,7 +208,7 @@ def makeCard(seed = None):
     drawTextLayer(dwg, cardWidth, cardHeight, clips)
     drawFlakeLayer(dwg, cardWidth, cardHeight, clips)
     drawTreeLayer(dwg, cardWidth, cardHeight, clips)
-    drawMountainLayer(dwg, clips)
+    drawMountainLayer(dwg, cardWidth, cardHeight, clips)
     drawMoonLayer(dwg, clips)
     drawStarLayer(dwg, clips)
     
