@@ -9,7 +9,7 @@ import clipvols
 
 def genStarPoints(numVerts = -1):
     if (numVerts < 4):
-        numVerts = random.randrange(4, 13)
+        numVerts = random.randrange(4, 9)
 
     outerRadius = 10
     innerRadius = outerRadius / 3

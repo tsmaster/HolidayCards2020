@@ -30,8 +30,39 @@ The steps, using painter's algorithm, from front to back:
 """
 
 
+def drawFrameLayer(dwg, cardWidth, cardHeight):
+    ll = m.Vector2(0, 1)
+    ul = m.Vector2(0, cardHeight-1)
+    ur = m.Vector2(cardWidth-1, cardHeight-1)
+    lr = m.Vector2(cardWidth-1, 1)
 
+    step = 50
+    
+    uStep = m.Vector2(0, step)
+    dStep = m.Vector2(0, -step)
+    rStep = m.Vector2(step, 0)
+    lStep = m.Vector2(-step, 0)
+
+    drawutil.drawPolyline(dwg, [ll.addVec2(rStep),
+                                ll,
+                                ll.addVec2(uStep)])
+
+    drawutil.drawPolyline(dwg, [ul.addVec2(rStep),
+                                ul,
+                                ul.addVec2(dStep)])
+
+    drawutil.drawPolyline(dwg, [lr.addVec2(lStep),
+                                lr,
+                                lr.addVec2(uStep)])
+    
+    drawutil.drawPolyline(dwg, [ur.addVec2(lStep),
+                                ur,
+                                ur.addVec2(dStep)])
+
+
+    
 def drawTextLayer(dwg, cardWidth, cardHeight, clips):
+    
     halfCardWidth = cardWidth / 2
     halfCardHeight = cardHeight / 2
 
@@ -49,7 +80,7 @@ def drawTextLayer(dwg, cardWidth, cardHeight, clips):
     hTotY = totY / 2
 
     cx = random.uniform(htbx, cardWidth - htbx)
-    cy = random.uniform(hTotY, cardHeight - hTotY)
+    cy = random.uniform(hTotY, 2 * cardHeight / 3 - hTotY)
 
     titleTop = cy + hTotY
     titleBottom = titleTop - tby
@@ -60,27 +91,29 @@ def drawTextLayer(dwg, cardWidth, cardHeight, clips):
     yearBottom = yearTop - yby
     yearLeft = cx - ybx / 2
     yearRight = yearLeft + ybx
-    
-    text.drawString(dwg, title, titleSize, titleLeft, titleBottom)
-    text.drawString(dwg, year, yearSize, yearLeft, yearBottom)
 
     clipMargin = 20
-
+    
     mLeft = titleLeft - clipMargin
     mTop = titleTop + clipMargin
     mRight = titleRight + clipMargin
     mBottom = yearBottom - clipMargin
+
+    for i in range(2):
+        drawutil.drawPolyline(dwg, [m.Vector2(mLeft, mBottom),
+                                    m.Vector2(mLeft, mTop),
+                                    m.Vector2(mRight, mTop),
+                                    m.Vector2(mRight, mBottom),
+                                    m.Vector2(mLeft, mBottom)])
+    
+    text.drawString(dwg, title, titleSize, titleLeft, titleBottom)
+    text.drawString(dwg, year, yearSize, yearLeft, yearBottom)
     
     clips.append(clipvols.OutsideRect(mLeft,
                                       mTop,
                                       mRight,
                                       mBottom))
 
-    drawutil.drawPolyline(dwg, [m.Vector2(mLeft, mBottom),
-                                m.Vector2(mLeft, mTop),
-                                m.Vector2(mRight, mTop),
-                                m.Vector2(mRight, mBottom),
-                                m.Vector2(mLeft, mBottom)])
     
 
 def drawFlakeLayer(dwg, cardWidth, cardHeight, clips):
@@ -99,7 +132,7 @@ def drawFlakeLayer(dwg, cardWidth, cardHeight, clips):
 
         angle = random.uniform(0, 2*math.pi)
 
-        flakeScale = random.uniform(2,6)
+        flakeScale = random.uniform(4,8)
 
         mat = m.makeTranslationRotationScaleUniform(fpv.x(), fpv.y(), angle, flakeScale)
         tpl = drawutil.transformPolyLines(spaths, mat)
@@ -242,28 +275,56 @@ def drawStarLayer(dwg, cardWidth, cardHeight, clips):
         drawutil.drawPolylines(dwg, polylines)
     
 
-def makeCard(seed = None):
+def makeCard(seed = None, name = None):
     if not (seed is None):
         random.seed(seed)
 
-    cardWidth = 1500
-    cardHeight = 1000
+    if name is None:
+        name = "card"
+
+    outputDir = "Output/"
+
+    cardWidth = 1330
+    cardHeight = 980
 
     dwg = draw.Drawing(cardWidth, cardHeight)
-    dwg.setRenderSize('150mm', '100mm')
+    dwg.setRenderSize('133mm', '98mm')
 
-    clips = []    
+    clips = []
+    
+    #drawFrameLayer(dwg, cardWidth, cardHeight)
     drawTextLayer(dwg, cardWidth, cardHeight, clips)
     drawFlakeLayer(dwg, cardWidth, cardHeight, clips)
-    drawTreeLayer(dwg, cardWidth, cardHeight, clips)
+    #drawTreeLayer(dwg, cardWidth, cardHeight, clips)
     drawMountainLayer(dwg, cardWidth, cardHeight, clips)
     drawMoonLayer(dwg, cardWidth, cardHeight, clips)
     drawStarLayer(dwg, cardWidth, cardHeight, clips)
+
+    dwg.saveSvg(outputDir + name + ".svg")
+    dwg.savePng(outputDir + name + ".png")
+
+def makeFrame():
+    outputDir = "Output/"
+
+    cardWidth = 1330
+    cardHeight = 980
+
+    dwg = draw.Drawing(cardWidth, cardHeight)
+    dwg.setRenderSize('133mm', '98mm')
+
+    drawFrameLayer(dwg, cardWidth, cardHeight)
+    dwg.saveSvg(outputDir + "frame" + ".svg")
     
 
-    dwg.saveSvg("Output/card.svg")
-    dwg.savePng("Output/card.png")
-
+def makeManyCards():    
+    for i in range(20):
+        name = "card_%04d" % i
+        makeCard(name, name)
+    
 
 if __name__ == "__main__":
-    makeCard("UNIT TEST")
+    #makeCard("UNIT TEST")
+    makeFrame()
+    #makeCard("DAVE'S OWN")
+    makeCard("LAST DEC 10")
+
