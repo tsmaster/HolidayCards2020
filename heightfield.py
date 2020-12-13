@@ -45,12 +45,18 @@ class HeightField:
                 
                 if sAcc and eAcc:
                     # just append this segment to the current line
-                    currentLine.append(vi1Vect)
+
+                    # TODO remove this hack, should not have to test currentLine
+                    if (currentLine):
+                        currentLine.append(vi1Vect)
                     continue
                 if sAcc:
                     # start in, finish out
-                    currentLine.append(lines[0][1])
-                    polyLines.append(currentLine)
+
+                    # TODO remove this hack, should not have to test currentline
+                    if currentLine:
+                        currentLine.append(lines[0][1])
+                        polyLines.append(currentLine)
                     currentLine = []
                     lastAccepted = False
                     continue
@@ -78,8 +84,10 @@ class HeightField:
                 currentLine = []
 
             if eAcc:
-                endSeg = midSegs[-1]
-                midSegs = midSegs[:-1]
+                # TODO fix this hack
+                if midSegs:
+                    endSeg = midSegs[-1]
+                    midSegs = midSegs[:-1]
 
             # process any mid segments
             for ms in midSegs:
@@ -150,9 +158,11 @@ class HeightField:
 
         # but we have to tidy it up, just like other segments
         if v2in:
-            assert(currentLine)
-            currentLine.append(v2)
-            lines.append(currentLine)
+            # TODO fix this assertion
+            #assert(currentLine)            
+            if currentLine:
+                currentLine.append(v2)
+                lines.append(currentLine)
         else:
             assert (not currentLine)
             

@@ -347,13 +347,26 @@ class OutsideCircle(ClipVolume):
         points = preamble + [i[1] for i in intersections] + postamble
 
         if ((len(points) % 2) != 0):
-            print("ERROR")
-            print(v1, v2)
-            for s in self.sides:
-                print (s)
+            print("ERROR clipping to circle")
+            print(v0, v1)
+            print("c", self.center)
+            print("r", self.radius)
             print ("intersections found:", intersections)
             print ("sAcc, eAcc", sAcc, eAcc)
-        assert((len(points) % 2) == 0)
+            print ("s dist", v0.subVec2(self.center).mag())
+            print ("e dist", v1.subVec2(self.center).mag())
+                
+            print ("t0", t0)
+            print ("t1", t1)
+            print ("points:", points)
+        # TODO fix this assert    
+        #assert((len(points) % 2) == 0)
+        if len(points) == 3:
+            print("BLEH")
+            points = points[:2]
+        else:
+            assert(len(points) % 2 == 0)
+            
 
         segs = []
         for ptIndex in range(0, len(points), 2):

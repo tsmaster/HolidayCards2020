@@ -44,6 +44,35 @@ def getStringBounds(s, glyphUnit):
         w += glyph.advance * glyphUnit
     return (w,h)
 
+def wordWrap(s, glyphUnit, maxPixelWidth):
+    lines = []
+    splitWords = s.split()
+
+    while getStringBounds(' '.join(splitWords), glyphUnit)[0] > maxPixelWidth:
+        bestStr = None
+        bestCount = -1
+        
+        for i in range(1, len(splitWords)):
+            subWords = splitWords[:i]
+            subStr = ' '.join(subWords)
+            subStrWidth = getStringBounds(subStr, glyphUnit)
+            if subStrWidth[0] < maxPixelWidth:
+                bestStr = subStr
+                bestCount = i
+            else:
+                break
+        assert(bestStr)
+
+        lines.append(bestStr)
+        splitWords = splitWords[bestCount:]
+    if splitWords:
+        lines.append(' '.join(splitWords))
+
+    return lines
+
+
+
+
 def drawHappyHolidays():
     dwg = draw.Drawing(1500, 1000)
     dwg.setRenderSize('150mm', '100mm')

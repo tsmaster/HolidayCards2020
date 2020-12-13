@@ -122,6 +122,8 @@ def drawFlakeLayer(dwg, cardWidth, cardHeight, clips):
                                            cardWidth - flakeMargin, cardHeight - flakeMargin,
                                            12, 80)
 
+    flakePoints.sort()
+
     for fp in flakePoints:
         fpv = m.Vector2(*fp)
         sfg = snowflake.SnowflakeGenerator(random.randrange(9, 16))
@@ -258,9 +260,14 @@ def drawStarLayer(dwg, cardWidth, cardHeight, clips):
     starBottom = cardHeight / 2
     starTop = cardHeight
 
+    starPoints = drawutil.pickPointsInBox(starLeft, starBottom, starRight, starTop, numStars, 15)
+
+    starPoints.sort()
+
     for n in range(numStars):
-        x = random.uniform(starLeft, starRight)
-        y = random.uniform(starBottom, starTop)
+        #x = random.uniform(starLeft, starRight)
+        #y = random.uniform(starBottom, starTop)
+        x, y = starPoints[n]
 
         angle = random.uniform(0, 2*math.pi)
 
@@ -280,7 +287,7 @@ def makeCard(seed = None, name = None):
         random.seed(seed)
 
     if name is None:
-        name = "card"
+        name = seed.lower().replace(" ", "")
 
     outputDir = "Output/"
 
@@ -295,13 +302,13 @@ def makeCard(seed = None, name = None):
     #drawFrameLayer(dwg, cardWidth, cardHeight)
     drawTextLayer(dwg, cardWidth, cardHeight, clips)
     drawFlakeLayer(dwg, cardWidth, cardHeight, clips)
-    #drawTreeLayer(dwg, cardWidth, cardHeight, clips)
+    drawTreeLayer(dwg, cardWidth, cardHeight, clips)
     drawMountainLayer(dwg, cardWidth, cardHeight, clips)
     drawMoonLayer(dwg, cardWidth, cardHeight, clips)
     drawStarLayer(dwg, cardWidth, cardHeight, clips)
 
     dwg.saveSvg(outputDir + name + ".svg")
-    dwg.savePng(outputDir + name + ".png")
+    #dwg.savePng(outputDir + name + ".png")
 
 def makeFrame():
     outputDir = "Output/"
@@ -326,5 +333,6 @@ if __name__ == "__main__":
     #makeCard("UNIT TEST")
     makeFrame()
     #makeCard("DAVE'S OWN")
-    makeCard("LAST DEC 10")
+    #makeCard("LAST DEC 10")
+    makeCard("TEST DEC 12")
 
